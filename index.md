@@ -135,7 +135,12 @@ opencode is installed with npm, which comes with Node.js. The scripts in this tu
 
 **macOS.** Install Node with [nvm](https://github.com/nvm-sh/nvm) or, if you use [Homebrew](https://brew.sh), with `brew install node`. The installer from nodejs.org often causes `EACCES` permission errors with `npm install -g`; use nvm or Homebrew instead rather than `sudo npm`.
 
-**Windows.** Install Node.js LTS from [nodejs.org](https://nodejs.org) or with `winget install OpenJS.NodeJS.LTS`, then open a new PowerShell window. If PowerShell says `npm.ps1 cannot be loaded because running scripts is disabled on this system`, run this once:
+**Windows.** Install Node.js in a way that stays available in every new terminal. Use one of these:
+
+- the **Windows Installer (.msi)** for the LTS version from [nodejs.org/download](https://nodejs.org/en/download) (scroll to the installer buttons and accept the defaults), or
+- in PowerShell: `winget install OpenJS.NodeJS.LTS`
+
+Then close PowerShell and open a new window. Avoid the command-line instructions at the top of the nodejs.org download page that use **fnm** or another version manager: they set up Node only for the current window, so `node` is "not recognized" again after you reopen the terminal, unless you also add fnm to your PowerShell profile (see Section 7.1). If you already installed Node that way, simply install the .msi as well. If PowerShell says `npm.ps1 cannot be loaded because running scripts is disabled on this system`, run this once:
 
 ```powershell
 Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
@@ -636,6 +641,7 @@ Avoid small models (a few billion parameters) and anything marked TEST for codin
 | URLs end up as `.../api/v1/v1/...` or `.../api/v1/models` and fail | `/v1` was added to the base address | Use `https://nebula.cs.vu.nl/api` exactly, for both agents |
 | Agent loops, stops halfway or ignores tools | The model is too small for agent work | Switch to `SURF.Qwen3.8-27B-FP8` or `FAST.gpt-oss:120b` |
 | Very slow replies | Nebula is busy or loading the model | Wait a minute and try again; `FAST.*` models share VU's GPUs with other users |
+| `node` works right after installing, but is "not recognized" in every new terminal (Windows) | Node was installed with fnm, the version manager in the nodejs.org command-line instructions, which only sets up the current window | Install the Windows Installer (.msi) from nodejs.org or run `winget install OpenJS.NodeJS.LTS`, then open a new terminal. To keep fnm instead, run `Add-Content $PROFILE 'fnm env --use-on-cd --shell powershell \| Out-String \| Invoke-Expression'` once (create the profile first with `New-Item -Force $PROFILE` if it doesn't exist) |
 | `npm.ps1 cannot be loaded` (Windows) | PowerShell blocks scripts by default | Run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once |
 | `opencode` or `claude` not recognised (Windows) or `command not found` (macOS, Ubuntu) | The terminal was opened before the installation | Open a new terminal window. If it persists, reinstall as in Sections 3.3, 4.1 or 5.1 |
 | Garbled screen or keys not working (Windows) | The old console window doesn't support the agent's interface | Use PowerShell inside Windows Terminal |
