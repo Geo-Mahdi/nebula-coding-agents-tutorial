@@ -175,7 +175,9 @@ Editing JSON by hand is easy to break: one missing comma or quote and opencode s
 **Ubuntu and macOS.** Paste into a terminal as one block. It works in bash and zsh.
 
 ```bash
+(
 printf "Paste your Nebula API key, then press Enter: "; read -s NEBULA_KEY; echo
+case "$NEBULA_KEY" in sk-*) ;; *) echo "No valid Nebula key (it must start with sk-). Nothing was changed. Paste the block again and paste your key at the prompt."; exit 1 ;; esac
 mkdir -p ~/.config/opencode
 cat > ~/.config/opencode/opencode.json <<EOF
 {
@@ -200,6 +202,7 @@ EOF
 chmod 600 ~/.config/opencode/opencode.json
 unset NEBULA_KEY
 python3 -m json.tool ~/.config/opencode/opencode.json > /dev/null && echo OK
+)
 ```
 
 You should see `OK`. If you see an error such as `Expecting ',' delimiter: line 12 column 5`, run the script again rather than fixing the file by hand. Two details matter: `\$schema` has a backslash so the shell doesn't treat it as a variable, and `$NEBULA_KEY` has none so your key is filled in.
@@ -212,40 +215,43 @@ node -e "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')); console
 
 **Windows.** This takes two pastes, because PowerShell would otherwise read the lines after the key prompt as your key.
 
-First, paste this single line, press Enter, then paste your key at the prompt and press Enter (nothing is shown while you paste the key):
+First, paste this line **exactly as shown** and press Enter. Don't put your key into the line itself. PowerShell then shows the prompt `Paste your Nebula API key, then press Enter:`; paste your key there and press Enter. The key appears as asterisks.
 
 ```powershell
 $secure = Read-Host "Paste your Nebula API key, then press Enter" -AsSecureString
 ```
 
-Then paste the following block. If Windows Terminal warns that the text contains several lines, choose **Paste anyway**.
+Then paste the following block. If Windows Terminal warns that the text contains several lines, choose **Paste anyway**. If the key is missing or doesn't start with `sk-`, the block stops with a red message and changes nothing.
 
 ```powershell
-$key = [System.Net.NetworkCredential]::new("", $secure).Password
-$dir = Join-Path $HOME ".config\opencode"
-New-Item -ItemType Directory -Force -Path $dir | Out-Null
-$config = [ordered]@{
-  '$schema' = "https://opencode.ai/config.json"
-  model     = "nebula/SURF.Qwen3.8-27B-FP8"
-  provider  = @{
-    nebula = [ordered]@{
-      npm     = "@ai-sdk/openai-compatible"
-      name    = "Nebula (VU)"
-      options = [ordered]@{
-        baseURL = "https://nebula.cs.vu.nl/api"
-        apiKey  = $key
-      }
-      models  = [ordered]@{
-        "SURF.Qwen3.8-27B-FP8" = @{ name = "Qwen3.8 27B (SURF)" }
-        "FAST.gpt-oss:120b"    = @{ name = "gpt-oss 120B (VU)" }
+& {
+  $key = if ($secure) { [System.Net.NetworkCredential]::new("", $secure).Password } else { "" }
+  if (-not $key.StartsWith("sk-")) { Write-Host "No valid Nebula key (it must start with sk-). Nothing was changed. Run the first line again, paste your key at the prompt, then paste this block again." -ForegroundColor Red; return }
+  $dir = Join-Path $HOME ".config\opencode"
+  New-Item -ItemType Directory -Force -Path $dir | Out-Null
+  $config = [ordered]@{
+    '$schema' = "https://opencode.ai/config.json"
+    model     = "nebula/SURF.Qwen3.8-27B-FP8"
+    provider  = @{
+      nebula = [ordered]@{
+        npm     = "@ai-sdk/openai-compatible"
+        name    = "Nebula (VU)"
+        options = [ordered]@{
+          baseURL = "https://nebula.cs.vu.nl/api"
+          apiKey  = $key
+        }
+        models  = [ordered]@{
+          "SURF.Qwen3.8-27B-FP8" = @{ name = "Qwen3.8 27B (SURF)" }
+          "FAST.gpt-oss:120b"    = @{ name = "gpt-oss 120B (VU)" }
+        }
       }
     }
   }
+  $file = Join-Path $dir "opencode.json"
+  [System.IO.File]::WriteAllText($file, ($config | ConvertTo-Json -Depth 10))
+  node -e "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')); console.log('OK')" $file
 }
-$file = Join-Path $dir "opencode.json"
-[System.IO.File]::WriteAllText($file, ($config | ConvertTo-Json -Depth 10))
-Remove-Variable key, secure
-node -e "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')); console.log('OK')" $file
+Remove-Variable secure -ErrorAction SilentlyContinue
 ```
 
 You should see `OK`. The script writes UTF-8 without a byte-order mark, which opencode expects. Files in your user folder are readable only by you and administrators, so there is no `chmod` step.
@@ -406,7 +412,9 @@ The scripts below write this file. They overwrite an existing `settings.json`, k
 **Ubuntu and macOS.** Paste as one block.
 
 ```bash
+(
 printf "Paste your Nebula API key, then press Enter: "; read -s NEBULA_KEY; echo
+case "$NEBULA_KEY" in sk-*) ;; *) echo "No valid Nebula key (it must start with sk-). Nothing was changed. Paste the block again and paste your key at the prompt."; exit 1 ;; esac
 mkdir -p ~/.claude
 [ -f ~/.claude/settings.json ] && cp ~/.claude/settings.json ~/.claude/settings.json.bak
 M=SURF.Qwen3.8-27B-FP8
@@ -428,41 +436,45 @@ EOF
 chmod 600 ~/.claude/settings.json
 unset NEBULA_KEY
 node -e "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')); console.log('OK')" ~/.claude/settings.json
+)
 ```
 
 **Windows.** This takes two pastes, because PowerShell would otherwise read the lines after the key prompt as your key.
 
-First, paste this single line, press Enter, then paste your key at the prompt and press Enter (nothing is shown while you paste the key):
+First, paste this line **exactly as shown** and press Enter. Don't put your key into the line itself. PowerShell then shows the prompt `Paste your Nebula API key, then press Enter:`; paste your key there and press Enter. The key appears as asterisks.
 
 ```powershell
 $secure = Read-Host "Paste your Nebula API key, then press Enter" -AsSecureString
 ```
 
-Then paste the following block. If Windows Terminal warns that the text contains several lines, choose **Paste anyway**.
+Then paste the following block. If Windows Terminal warns that the text contains several lines, choose **Paste anyway**. If the key is missing or doesn't start with `sk-`, the block stops with a red message and changes nothing.
 
 ```powershell
-$key = [System.Net.NetworkCredential]::new("", $secure).Password
-$dir = Join-Path $HOME ".claude"
-New-Item -ItemType Directory -Force -Path $dir | Out-Null
-$file = Join-Path $dir "settings.json"
-if (Test-Path $file) { Copy-Item $file "$file.bak" -Force }
-$m = "SURF.Qwen3.8-27B-FP8"
-$settings = @{
-  env = [ordered]@{
-    ANTHROPIC_BASE_URL                       = "https://nebula.cs.vu.nl/api"
-    ANTHROPIC_AUTH_TOKEN                     = $key
-    ANTHROPIC_MODEL                          = $m
-    ANTHROPIC_DEFAULT_OPUS_MODEL             = $m
-    ANTHROPIC_DEFAULT_SONNET_MODEL           = $m
-    ANTHROPIC_DEFAULT_HAIKU_MODEL            = $m
-    CLAUDE_CODE_SUBAGENT_MODEL               = $m
-    CLAUDE_CODE_MAX_CONTEXT_TOKENS           = "262144"
-    CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1"
+& {
+  $key = if ($secure) { [System.Net.NetworkCredential]::new("", $secure).Password } else { "" }
+  if (-not $key.StartsWith("sk-")) { Write-Host "No valid Nebula key (it must start with sk-). Nothing was changed. Run the first line again, paste your key at the prompt, then paste this block again." -ForegroundColor Red; return }
+  $dir = Join-Path $HOME ".claude"
+  New-Item -ItemType Directory -Force -Path $dir | Out-Null
+  $file = Join-Path $dir "settings.json"
+  if (Test-Path $file) { Copy-Item $file "$file.bak" -Force }
+  $m = "SURF.Qwen3.8-27B-FP8"
+  $settings = @{
+    env = [ordered]@{
+      ANTHROPIC_BASE_URL                       = "https://nebula.cs.vu.nl/api"
+      ANTHROPIC_AUTH_TOKEN                     = $key
+      ANTHROPIC_MODEL                          = $m
+      ANTHROPIC_DEFAULT_OPUS_MODEL             = $m
+      ANTHROPIC_DEFAULT_SONNET_MODEL           = $m
+      ANTHROPIC_DEFAULT_HAIKU_MODEL            = $m
+      CLAUDE_CODE_SUBAGENT_MODEL               = $m
+      CLAUDE_CODE_MAX_CONTEXT_TOKENS           = "262144"
+      CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1"
+    }
   }
+  [System.IO.File]::WriteAllText($file, ($settings | ConvertTo-Json -Depth 5))
+  Get-Content $file -Raw | ConvertFrom-Json | Out-Null; "OK"
 }
-[System.IO.File]::WriteAllText($file, ($settings | ConvertTo-Json -Depth 5))
-Remove-Variable key, secure
-Get-Content $file -Raw | ConvertFrom-Json | Out-Null; "OK"
+Remove-Variable secure -ErrorAction SilentlyContinue
 ```
 
 You should see `OK`. Without Node on Ubuntu or macOS, replace the last line with `python3 -m json.tool ~/.claude/settings.json > /dev/null && echo OK`.
@@ -472,18 +484,21 @@ You should see `OK`. Without Node on Ubuntu or macOS, replace the last line with
 Ubuntu and macOS:
 
 ```bash
+(
 printf "Nebula key: "; read -s ANTHROPIC_AUTH_TOKEN; echo
+case "$ANTHROPIC_AUTH_TOKEN" in sk-*) ;; *) echo "No valid Nebula key (it must start with sk-). Nothing was changed. Paste the block again and paste your key at the prompt."; exit 1 ;; esac
 export ANTHROPIC_AUTH_TOKEN
 export ANTHROPIC_BASE_URL=https://nebula.cs.vu.nl/api
 export ANTHROPIC_MODEL=SURF.Qwen3.8-27B-FP8
 export ANTHROPIC_DEFAULT_OPUS_MODEL=$ANTHROPIC_MODEL ANTHROPIC_DEFAULT_SONNET_MODEL=$ANTHROPIC_MODEL ANTHROPIC_DEFAULT_HAIKU_MODEL=$ANTHROPIC_MODEL CLAUDE_CODE_SUBAGENT_MODEL=$ANTHROPIC_MODEL
 export CLAUDE_CODE_MAX_CONTEXT_TOKENS=262144 CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
 claude
+)
 ```
 
 Windows (PowerShell):
 
-First paste this single line, press Enter, and paste your key at the prompt:
+First paste this line **exactly as shown** and press Enter, then paste your key at the `Nebula key:` prompt (it appears as asterisks):
 
 ```powershell
 $env:ANTHROPIC_AUTH_TOKEN = [System.Net.NetworkCredential]::new("", (Read-Host "Nebula key" -AsSecureString)).Password
@@ -492,15 +507,18 @@ $env:ANTHROPIC_AUTH_TOKEN = [System.Net.NetworkCredential]::new("", (Read-Host "
 Then paste the rest:
 
 ```powershell
-$env:ANTHROPIC_BASE_URL = "https://nebula.cs.vu.nl/api"
-$env:ANTHROPIC_MODEL = "SURF.Qwen3.8-27B-FP8"
-$env:ANTHROPIC_DEFAULT_OPUS_MODEL = $env:ANTHROPIC_MODEL
-$env:ANTHROPIC_DEFAULT_SONNET_MODEL = $env:ANTHROPIC_MODEL
-$env:ANTHROPIC_DEFAULT_HAIKU_MODEL = $env:ANTHROPIC_MODEL
-$env:CLAUDE_CODE_SUBAGENT_MODEL = $env:ANTHROPIC_MODEL
-$env:CLAUDE_CODE_MAX_CONTEXT_TOKENS = "262144"
-$env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1"
-claude
+& {
+  if (-not "$env:ANTHROPIC_AUTH_TOKEN".StartsWith("sk-")) { Write-Host "No valid Nebula key (it must start with sk-). Run the first line again and paste your key at the prompt." -ForegroundColor Red; return }
+  $env:ANTHROPIC_BASE_URL = "https://nebula.cs.vu.nl/api"
+  $env:ANTHROPIC_MODEL = "SURF.Qwen3.8-27B-FP8"
+  $env:ANTHROPIC_DEFAULT_OPUS_MODEL = $env:ANTHROPIC_MODEL
+  $env:ANTHROPIC_DEFAULT_SONNET_MODEL = $env:ANTHROPIC_MODEL
+  $env:ANTHROPIC_DEFAULT_HAIKU_MODEL = $env:ANTHROPIC_MODEL
+  $env:CLAUDE_CODE_SUBAGENT_MODEL = $env:ANTHROPIC_MODEL
+  $env:CLAUDE_CODE_MAX_CONTEXT_TOKENS = "262144"
+  $env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1"
+  claude
+}
 ```
 
 To use a different Nebula model, replace `SURF.Qwen3.8-27B-FP8` everywhere and set `CLAUDE_CODE_MAX_CONTEXT_TOKENS` to that model's context size, if known.
