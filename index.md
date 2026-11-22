@@ -108,7 +108,7 @@ No **API Keys** section? API access has to be switched on for your account. Ask 
 Ubuntu and macOS:
 
 ```bash
-curl -s -H "Authorization: Bearer sk-..." https://nebula.cs.vu.nl/api/models | grep -o '"id":"[^"]*"' | sort -u
+curl -s -H "Authorization: Bearer sk-..." https://nebula.cs.vu.nl/api/models | python3 -c 'import json,sys; d=json.load(sys.stdin); print("\n".join(sorted(m["id"] for m in d["data"])) if "data" in d else d)'
 ```
 
 Windows (PowerShell):
@@ -117,7 +117,7 @@ Windows (PowerShell):
 (Invoke-RestMethod https://nebula.cs.vu.nl/api/models -Headers @{ Authorization = "Bearer sk-..." }).data.id | Sort-Object -Unique
 ```
 
-You should see model IDs such as `FAST.gpt-oss:120b` and `SURF.Qwen3.8-27B-FP8`. An empty result, `Not authenticated` or `(401) Unauthorized` means the key is wrong or not enabled.
+You should see model IDs such as `FAST.gpt-oss:120b` and `SURF.Qwen3.8-27B-FP8`. `Your session has expired or the token is invalid`, `Not authenticated` or `401 (Unauthorized)` means the key is wrong, incomplete or not enabled. On macOS, if the command asks you to install "command line developer tools", cancel; you can see the same list later with `opencode models nebula` (Section 4.4).
 
 ### 3.2 A terminal
 
@@ -438,6 +438,7 @@ Claude Code is pointed at Nebula with environment variables. You can put them in
 | `CLAUDE_CODE_SUBAGENT_MODEL` | the same model ID | Model for helper agents Claude Code starts on its own |
 | `CLAUDE_CODE_MAX_CONTEXT_TOKENS` | `262144` | Claude Code doesn't know Nebula's models and otherwise assumes a context window of 1 million tokens; this sets the real size of `SURF.Qwen3.8-27B-FP8` |
 | `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` | `1` | Turns off usage statistics, error reports and update checks that Claude Code would otherwise send to outside services |
+| `CLAUDE_CODE_EFFORT_LEVEL` | `medium` | Claude Code asks for `high` effort by default, and for that setting Nebula returns an empty answer with `SURF.Qwen3.8-27B-FP8`: Claude Code then prints nothing and does nothing. `medium` avoids this. Don't choose `high` or `max` with `/effort` |
 
 The scripts below write this file. They overwrite an existing `settings.json`, keeping a copy as `settings.json.bak`; if you already had Claude Code settings, merge them back by hand. Because the settings apply to every Claude Code session, Claude Code will then always use Nebula. To go back to Anthropic, delete the file or remove its `env` block.
 
@@ -461,7 +462,8 @@ cat > ~/.claude/settings.json <<EOF
     "ANTHROPIC_DEFAULT_HAIKU_MODEL": "$M",
     "CLAUDE_CODE_SUBAGENT_MODEL": "$M",
     "CLAUDE_CODE_MAX_CONTEXT_TOKENS": "262144",
-    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "CLAUDE_CODE_EFFORT_LEVEL": "medium"
   }
 }
 EOF
@@ -501,6 +503,7 @@ Then paste the following block. If Windows Terminal warns that the text contains
       CLAUDE_CODE_SUBAGENT_MODEL               = $m
       CLAUDE_CODE_MAX_CONTEXT_TOKENS           = "262144"
       CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1"
+      CLAUDE_CODE_EFFORT_LEVEL                 = "medium"
     }
   }
   [System.IO.File]::WriteAllText($file, ($settings | ConvertTo-Json -Depth 5))
@@ -524,7 +527,7 @@ export ANTHROPIC_AUTH_TOKEN
 export ANTHROPIC_BASE_URL=https://nebula.cs.vu.nl/api
 export ANTHROPIC_MODEL=SURF.Qwen3.8-27B-FP8
 export ANTHROPIC_DEFAULT_OPUS_MODEL=$ANTHROPIC_MODEL ANTHROPIC_DEFAULT_SONNET_MODEL=$ANTHROPIC_MODEL ANTHROPIC_DEFAULT_HAIKU_MODEL=$ANTHROPIC_MODEL CLAUDE_CODE_SUBAGENT_MODEL=$ANTHROPIC_MODEL
-export CLAUDE_CODE_MAX_CONTEXT_TOKENS=262144 CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+export CLAUDE_CODE_MAX_CONTEXT_TOKENS=262144 CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 CLAUDE_CODE_EFFORT_LEVEL=medium
 claude
 )
 ```
@@ -550,6 +553,7 @@ Then paste the rest:
   $env:CLAUDE_CODE_SUBAGENT_MODEL = $env:ANTHROPIC_MODEL
   $env:CLAUDE_CODE_MAX_CONTEXT_TOKENS = "262144"
   $env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1"
+  $env:CLAUDE_CODE_EFFORT_LEVEL = "medium"
   claude
 }
 ```
@@ -584,6 +588,8 @@ A reply containing `"type":"message"` and some text means the endpoint works. A 
 ```bash
 claude -p "Reply with the word OK"
 ```
+
+It should print `OK`. A line starting with `[claude-code:unrecognized_model]` above it is harmless: it only notes that Claude Code doesn't know the Nebula model's name. If nothing else is printed, see the "prints nothing" row in Section 7.3.
 
 Finally start `claude` interactively and type `/status`. It should list `https://nebula.cs.vu.nl/api` as the API address and `ANTHROPIC_AUTH_TOKEN` as the source of the key. If Claude Code instead asks you to log in to an Anthropic account, the settings were not picked up: don't log in for sensitive work, because then requests go to Anthropic, and see Section 7.
 
@@ -641,7 +647,7 @@ Avoid small models (a few billion parameters) and anything marked TEST for codin
 
 | What you see | What it means | Fix |
 | --- | --- | --- |
-| `Not authenticated` or HTTP 401 | The agent sent no key or a wrong one | Test the key with the command in Section 3.1. If you used an environment variable, check it in the same terminal; it should print `sk-..`. Ubuntu and macOS: `echo ${NEBULA_API_KEY:0:5}`. Windows: `$env:NEBULA_API_KEY.Substring(0,5)` |
+| `Not authenticated`, `the token is invalid` or HTTP 401 | The agent sent no key or a wrong one | Test the key with the command in Section 3.1. If you used an environment variable, check it in the same terminal; it should print `sk-..`. Ubuntu and macOS: `echo ${NEBULA_API_KEY:0:5}`. Windows: `$env:NEBULA_API_KEY.Substring(0,5)` |
 | `model not found` or 404 on a model | The model ID doesn't match Nebula's | Copy the ID exactly from Nebula's list (Section 3.1); for opencode rerun the script in Section 4.3 |
 | URLs end up as `.../api/v1/v1/...` or `.../api/v1/models` and fail | `/v1` was added to the base address | Use `https://nebula.cs.vu.nl/api` exactly, for both agents |
 | Agent loops, stops halfway or ignores tools | The model is too small for agent work | Switch to `SURF.Qwen3.8-27B-FP8` or `FAST.gpt-oss:120b` |
@@ -689,6 +695,7 @@ Add-Content $PROFILE 'fnm env --use-on-cd --shell powershell | Out-String | Invo
 | Claude Code asks you to log in to Anthropic | It didn't read your settings | Check that `~/.claude/settings.json` exists and passes the check in Section 5.2, then restart `claude`. Don't log in for sensitive work |
 | `/status` shows an Anthropic address or an Anthropic login instead of Nebula | Same cause: without `ANTHROPIC_AUTH_TOKEN`, Claude Code falls back to an earlier Anthropic login | Fix the settings file and restart `claude`. To remove the old login as well, run `/logout` inside Claude Code |
 | 404 on `/api/v1/messages` | This Nebula version has no Anthropic endpoint | Use opencode instead |
+| Claude Code prints nothing, or `claude -p` returns an empty reply | Effort is set to `high` or `max`, for which Nebula returns empty answers with some models | Set `CLAUDE_CODE_EFFORT_LEVEL` to `medium` as in Section 5.2, and don't choose `high` or `max` with `/effort` |
 | Errors about tools, `tool_use` or the stream stopping mid-answer | Nebula's Anthropic endpoint doesn't fully handle Claude Code's requests, or the model handles tools poorly | Try `SURF.Qwen3.8-27B-FP8`; if it persists, use opencode and report it to the Nebula administrators |
 | `doesn't recognize the model ... assumes a context window` | `CLAUDE_CODE_MAX_CONTEXT_TOKENS` is not set | Add it as in Section 5.2 |
 | Claude Code runs only PowerShell commands, or says Git Bash wasn't found (Windows) | Git for Windows is missing | Install [Git for Windows](https://git-scm.com/downloads/win) and open a new terminal |
