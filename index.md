@@ -2,7 +2,7 @@
 title: Coding agents with Nebula (VU)
 ---
 
-_Mahdi Rahimi · Vrije Universiteit Amsterdam · November 2026_
+_Mahdi Rahimi · Societal Analytics Lab · Vrije Universiteit Amsterdam · November 2026_
 
 **Summary.** This tutorial explains how researchers and students at VU Amsterdam can run coding agents on Nebula, the university's own large language model (LLM) service, instead of on commercial AI services. It defines what a coding agent is, explains where data goes when you use one, and gives step-by-step instructions for two agents, opencode and Claude Code, on Ubuntu, macOS and Windows.
 
