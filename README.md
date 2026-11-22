@@ -1,6 +1,6 @@
 # Nebula coding agents tutorial
 
-How to use [Nebula](https://nebula.cs.vu.nl), the VU LLM service, in coding agents such as [opencode](https://opencode.ai).
+How to use [Nebula](https://nebula.cs.vu.nl), the VU LLM service, in coding agents such as [opencode](https://opencode.ai) and Claude Code, on Ubuntu, macOS and Windows.
 
 Read it at **https://geo-mahdi.github.io/nebula-coding-agents-tutorial/**
 
