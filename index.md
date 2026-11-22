@@ -210,10 +210,17 @@ You should see `OK`. If you see an error such as `Expecting ',' delimiter: line 
 node -e "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')); console.log('OK')" ~/.config/opencode/opencode.json
 ```
 
-**Windows.** Paste into PowerShell as one block.
+**Windows.** This takes two pastes, because PowerShell would otherwise read the lines after the key prompt as your key.
+
+First, paste this single line, press Enter, then paste your key at the prompt and press Enter (nothing is shown while you paste the key):
 
 ```powershell
 $secure = Read-Host "Paste your Nebula API key, then press Enter" -AsSecureString
+```
+
+Then paste the following block. If Windows Terminal warns that the text contains several lines, choose **Paste anyway**.
+
+```powershell
 $key = [System.Net.NetworkCredential]::new("", $secure).Password
 $dir = Join-Path $HOME ".config\opencode"
 New-Item -ItemType Directory -Force -Path $dir | Out-Null
@@ -423,10 +430,17 @@ unset NEBULA_KEY
 node -e "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')); console.log('OK')" ~/.claude/settings.json
 ```
 
-**Windows.** Paste into PowerShell as one block.
+**Windows.** This takes two pastes, because PowerShell would otherwise read the lines after the key prompt as your key.
+
+First, paste this single line, press Enter, then paste your key at the prompt and press Enter (nothing is shown while you paste the key):
 
 ```powershell
 $secure = Read-Host "Paste your Nebula API key, then press Enter" -AsSecureString
+```
+
+Then paste the following block. If Windows Terminal warns that the text contains several lines, choose **Paste anyway**.
+
+```powershell
 $key = [System.Net.NetworkCredential]::new("", $secure).Password
 $dir = Join-Path $HOME ".claude"
 New-Item -ItemType Directory -Force -Path $dir | Out-Null
@@ -469,8 +483,15 @@ claude
 
 Windows (PowerShell):
 
+First paste this single line, press Enter, and paste your key at the prompt:
+
 ```powershell
 $env:ANTHROPIC_AUTH_TOKEN = [System.Net.NetworkCredential]::new("", (Read-Host "Nebula key" -AsSecureString)).Password
+```
+
+Then paste the rest:
+
+```powershell
 $env:ANTHROPIC_BASE_URL = "https://nebula.cs.vu.nl/api"
 $env:ANTHROPIC_MODEL = "SURF.Qwen3.8-27B-FP8"
 $env:ANTHROPIC_DEFAULT_OPUS_MODEL = $env:ANTHROPIC_MODEL
