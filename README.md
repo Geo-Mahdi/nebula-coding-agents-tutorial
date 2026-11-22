@@ -4,6 +4,6 @@ How to use [Nebula](https://nebula.cs.vu.nl), the VU LLM service, in coding agen
 
 Read it at **https://geo-mahdi.github.io/nebula-coding-agents-tutorial/**
 
-The tutorial source is [`index.md`](index.md). GitHub Pages builds the site from the `main` branch.
+The tutorial source is [`index.md`](index.md). [`scripts/`](scripts) holds helper scripts the tutorial links to. GitHub Pages builds the site from the `main` branch.
 
 Never commit an API key to this repository.
