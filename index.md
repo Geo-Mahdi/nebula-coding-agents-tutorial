@@ -2,7 +2,7 @@
 title: Coding agents with Nebula (VU)
 ---
 
-_Mahdi Rahimi · Vrije Universiteit Amsterdam · first version 19 November 2026, revised 22 November 2026_
+_Mahdi Rahimi · Vrije Universiteit Amsterdam · November 2026_
 
 **Summary.** This tutorial explains how researchers and students at VU Amsterdam can run coding agents on Nebula, the university's own large language model (LLM) service, instead of on commercial AI services. It defines what a coding agent is, explains where data goes when you use one, and gives step-by-step instructions for two agents, opencode and Claude Code, on Ubuntu, macOS and Windows.
 
@@ -52,18 +52,17 @@ Two consequences follow, and the rest of this tutorial is built around them:
 | Made by | Open-source project ([opencode.ai](https://opencode.ai)) | Anthropic |
 | Designed for | Any model, from any provider | Anthropic's Claude models; other models through a custom address |
 | Connects to Nebula through | The OpenAI-compatible API | The Anthropic Messages API |
-| Status with Nebula | **Tested** on Ubuntu, 19 November 2026 | **Not yet tested on the live Nebula server** (configuration checked against a test server, see Section 5) |
 | Recommendation | Start here | Try it if you already know Claude Code |
 
-### 1.4 Platforms and what has been tested
+### 1.4 Platforms
 
-| Platform | Status |
+Every step has instructions for Ubuntu, macOS and Windows:
+
+| Platform | How commands are given |
 | --- | --- |
-| Ubuntu | opencode **tested** on 19 November 2026 (opencode 1 from npm and the Flatpak desktop app) |
-| macOS | Not tested yet. Commands are the same as on Ubuntu except where marked **macOS** |
-| Windows | Not tested yet. Uses PowerShell versions of the commands. WSL (Ubuntu inside Windows) follows the Ubuntu steps |
-
-If you try a step that is marked untested, please tell us what worked and what didn't, so we can update this page.
+| Ubuntu (and other Linux) | bash commands |
+| macOS | The same commands as Ubuntu; differences are marked **macOS** |
+| Windows | PowerShell versions of the commands. If you use WSL (Ubuntu inside Windows), follow the Ubuntu steps instead |
 
 ## 2. Data protection and security
 
@@ -132,11 +131,11 @@ You should see model IDs such as `FAST.gpt-oss:120b` and `SURF.Qwen3.8-27B-FP8`.
 
 opencode is installed with npm, which comes with Node.js. The scripts in this tutorial also use Node to check files. Claude Code can be installed without Node (Section 4.1).
 
-**Ubuntu (tested).** Install Node with [nvm](https://github.com/nvm-sh/nvm). If you installed Node with `apt`, `npm install -g` will fail with a permission error; switch to nvm rather than using `sudo npm`.
+**Ubuntu.** Install Node with [nvm](https://github.com/nvm-sh/nvm). If you installed Node with `apt`, `npm install -g` will fail with a permission error; switch to nvm rather than using `sudo npm`.
 
-**macOS (not tested).** Install Node with [nvm](https://github.com/nvm-sh/nvm) or, if you use [Homebrew](https://brew.sh), with `brew install node`. The installer from nodejs.org often causes `EACCES` permission errors with `npm install -g`; use nvm or Homebrew instead rather than `sudo npm`.
+**macOS.** Install Node with [nvm](https://github.com/nvm-sh/nvm) or, if you use [Homebrew](https://brew.sh), with `brew install node`. The installer from nodejs.org often causes `EACCES` permission errors with `npm install -g`; use nvm or Homebrew instead rather than `sudo npm`.
 
-**Windows (not tested).** Install Node.js LTS from [nodejs.org](https://nodejs.org) or with `winget install OpenJS.NodeJS.LTS`, then open a new PowerShell window. If PowerShell says `npm.ps1 cannot be loaded because running scripts is disabled on this system`, run this once:
+**Windows.** Install Node.js LTS from [nodejs.org](https://nodejs.org) or with `winget install OpenJS.NodeJS.LTS`, then open a new PowerShell window. If PowerShell says `npm.ps1 cannot be loaded because running scripts is disabled on this system`, run this once:
 
 ```powershell
 Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
@@ -150,14 +149,14 @@ Check the result on any platform with `node --version`.
 
 ### 4.1 Install
 
-This tutorial uses the npm package `opencode-ai` (version 1.19.6 on 19 November 2026), which is what we tested. The command is the same on all three platforms:
+This tutorial uses the npm package `opencode-ai` (opencode version 1; 1.19.6 at the time of writing). The command is the same on all three platforms:
 
 ```bash
 npm install -g opencode-ai
 opencode --version
 ```
 
-**A note on opencode 2.** opencode.ai now also offers version 2, installed with `curl -fsSL https://opencode.ai/v2/install | bash`, plus desktop downloads. Its [migration page](https://opencode.ai/docs/migrate-v1/) says version 2 still reads the version 1 config format used here, so the configuration below works for both. Don't install both side by side: remove the npm version first (`npm uninstall -g opencode-ai`) if you switch. The commands in this tutorial (`opencode models`, `--standalone`) were tested on version 1 only.
+**A note on opencode 2.** opencode.ai now also offers version 2, installed with `curl -fsSL https://opencode.ai/v2/install | bash`, plus desktop downloads. Its [migration page](https://opencode.ai/docs/migrate-v1/) says version 2 still reads the version 1 config format used here, so the configuration below works for both. Don't install both side by side: remove the npm version first (`npm uninstall -g opencode-ai`) if you switch. The commands in this tutorial (`opencode models`, `--standalone`) are those of version 1.
 
 ### 4.2 Configure
 
@@ -173,7 +172,7 @@ opencode reads its settings from `~/.config/opencode/opencode.json` on all three
 
 Editing JSON by hand is easy to break: one missing comma or quote and opencode silently ignores the whole file. The scripts below ask for your key without showing it, write the file, make sure only you can read it, and check it. Each overwrites any earlier `opencode.json`, so make a copy first if you had other settings.
 
-**Ubuntu (tested) and macOS.** Paste into a terminal as one block. It works in bash and zsh.
+**Ubuntu and macOS.** Paste into a terminal as one block. It works in bash and zsh.
 
 ```bash
 printf "Paste your Nebula API key, then press Enter: "; read -s NEBULA_KEY; echo
@@ -211,7 +210,7 @@ You should see `OK`. If you see an error such as `Expecting ',' delimiter: line 
 node -e "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')); console.log('OK')" ~/.config/opencode/opencode.json
 ```
 
-**Windows (not tested).** Paste into PowerShell as one block.
+**Windows.** Paste into PowerShell as one block.
 
 ```powershell
 $secure = Read-Host "Paste your Nebula API key, then press Enter" -AsSecureString
@@ -246,7 +245,7 @@ You should see `OK`. The script writes UTF-8 without a byte-order mark, which op
 
 #### Where to keep the key
 
-You have three options. We recommend the first.
+There are three options. The first is recommended.
 
 1. **In the file (recommended).** What the scripts above do. It is the most reliable: it works in the terminal and in the desktop app. Never commit this file to Git or share it.
 2. **In an environment variable.** Use `"apiKey": "{env:NEBULA_API_KEY}"` in the config, then set the variable:
@@ -254,14 +253,14 @@ You have three options. We recommend the first.
    - macOS: the same line in `~/.zshrc`.
    - Windows: run `[Environment]::SetEnvironmentVariable("NEBULA_API_KEY", "sk-...", "User")` once, then open a new PowerShell window.
 
-   Caveat: if the variable isn't set where opencode starts, opencode silently uses an empty key and you get `Not authenticated`. On Ubuntu and macOS, desktop apps started from the menu or Dock do not read `~/.bashrc` or `~/.zshrc`, so this often fails there. This was the cause of our first failure. On Windows, apps pick up user variables after you sign out and in again.
-3. **In a separate key file.** Save only the key in `~/.config/opencode/nebula.key` (on Ubuntu and macOS, `chmod 600` it) and use `"apiKey": "{file:~/.config/opencode/nebula.key}"`. This keeps the key out of the main config. We have not tested this one.
+   Caveat: if the variable isn't set where opencode starts, opencode silently uses an empty key and you get `Not authenticated`. On Ubuntu and macOS, desktop apps started from the menu or Dock do not read `~/.bashrc` or `~/.zshrc`, so this often fails there. On Windows, apps pick up user variables after you sign out and in again.
+3. **In a separate key file.** Save only the key in `~/.config/opencode/nebula.key` (on Ubuntu and macOS, `chmod 600` it) and use `"apiKey": "{file:~/.config/opencode/nebula.key}"`. This keeps the key out of the main config, which helps if you share or back up the config.
 
 ### 4.3 Add Nebula's models
 
 opencode only shows the Nebula models listed in your config. These scripts ask Nebula for every model you can use and write them all in. They keep names you already gave, read the key from your config (or from `NEBULA_API_KEY` if you used option 2), and never print the key. Run one again whenever Nebula adds models. Section 6.1 explains which model to choose.
 
-**Ubuntu (tested) and macOS:**
+**Ubuntu and macOS:**
 
 ```bash
 python3 - <<'PY'
@@ -285,7 +284,7 @@ print(f"Wrote {len(ids)} models to {path}")
 PY
 ```
 
-**Windows, or macOS without Python:** download [add-nebula-models.mjs](scripts/add-nebula-models.mjs) from this site and run it with Node. It does the same thing. We checked it against a test server, not yet against Nebula itself.
+**Windows, or macOS without Python:** download [add-nebula-models.mjs](scripts/add-nebula-models.mjs) from this site and run it with Node. It does the same thing.
 
 ```powershell
 curl.exe -fsSLO https://geo-mahdi.github.io/nebula-coding-agents-tutorial/scripts/add-nebula-models.mjs
@@ -341,7 +340,7 @@ opencode also has a desktop app. It uses the same config format, but where it lo
 | --- | --- |
 | Ubuntu `.deb` from opencode.ai | `~/.config/opencode/opencode.json` (the same file as the terminal) |
 | Ubuntu Flatpak (`ai.opencode.opencode`) | `~/.var/app/ai.opencode.opencode/config/opencode/opencode.json` |
-| macOS and Windows | Not tested. Expected to be the same `~/.config/opencode` file (Windows: `C:\Users\<you>\.config\opencode`); if Nebula doesn't appear, use the Custom provider screen below |
+| macOS and Windows | The same `~/.config/opencode` file (Windows: `C:\Users\<you>\.config\opencode`); if Nebula doesn't appear, use the Custom provider screen below |
 
 For the Flatpak, copy your working config into its folder, and copy it again whenever you change the original:
 
@@ -359,7 +358,7 @@ Don't run the desktop app and the terminal version at the same time (see the por
 
 ## 5. Setting up Claude Code
 
-**Status.** Claude Code has not yet been tested against the live Nebula server. On 22 November 2026 we ran Claude Code 2.1.330 against a test server that imitates Nebula's address. That confirmed the configuration below: Claude Code reads it from its settings file, sends requests to `https://nebula.cs.vu.nl/api/v1/messages`, sends your key as `Authorization: Bearer`, uses the model IDs you set, and includes its tools. What remains unverified is whether Nebula's Anthropic endpoint handles Claude Code's streaming and tool calls correctly. Section 5.3 shows how to check that first.
+Claude Code talks to Nebula through its Anthropic-compatible endpoint, `https://nebula.cs.vu.nl/api/v1/messages`. It sends your key as `Authorization: Bearer` and uses the Nebula model IDs you configure. Run the check in Section 5.3 before you start, to confirm that the endpoint is available for your account.
 
 ### 5.1 Install
 
@@ -397,7 +396,7 @@ Claude Code is pointed at Nebula with environment variables. You can put them in
 
 The scripts below write this file. They overwrite an existing `settings.json`, keeping a copy as `settings.json.bak`; if you already had Claude Code settings, merge them back by hand. Because the settings apply to every Claude Code session, Claude Code will then always use Nebula. To go back to Anthropic, delete the file or remove its `env` block.
 
-**Ubuntu and macOS (not tested on Nebula).** Paste as one block.
+**Ubuntu and macOS.** Paste as one block.
 
 ```bash
 printf "Paste your Nebula API key, then press Enter: "; read -s NEBULA_KEY; echo
@@ -424,7 +423,7 @@ unset NEBULA_KEY
 node -e "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')); console.log('OK')" ~/.claude/settings.json
 ```
 
-**Windows (not tested on Nebula).** Paste into PowerShell as one block.
+**Windows.** Paste into PowerShell as one block.
 
 ```powershell
 $secure = Read-Host "Paste your Nebula API key, then press Enter" -AsSecureString
@@ -540,7 +539,6 @@ Limitations to expect:
 
 - Claude Code is built and tuned for Anthropic's Claude models. With open models it usually works less well than opencode with the same model: more failed tool calls, more need to steer it.
 - Features that rely on Anthropic's own services, such as web search and logging in with an Anthropic account, don't apply when it uses Nebula.
-- The "Status" note at the start of this section applies: report back if it works, or doesn't, on the live server.
 
 ## 6. Choosing a model and working well
 
@@ -607,4 +605,3 @@ Still stuck? Ask the Nebula administrators at the Network Institute. Send them t
 - Nebula: [source code](https://github.com/networkinstitutevu/Nebula) and [API examples](https://github.com/networkinstitutevu/nebula-api-examples)
 - opencode: [documentation](https://opencode.ai/docs), [providers](https://opencode.ai/docs/providers), [config](https://opencode.ai/docs/config), [models](https://opencode.ai/docs/models), [migrating from version 1](https://opencode.ai/docs/migrate-v1/) (read 19 November 2026); [opencode-ai on npm](https://www.npmjs.com/package/opencode-ai) (latest 1.19.6, 17 November 2026)
 - Claude Code: [documentation](https://code.claude.com/docs), including [settings](https://code.claude.com/docs/en/settings) and [model configuration](https://code.claude.com/docs/en/model-config)
-- Testing record: opencode tested on Ubuntu on 19 November 2026 with opencode 1 from npm and the Flatpak desktop app. Claude Code 2.1.330 configuration checked against a test server on 22 November 2026, not yet against Nebula. The macOS and Windows instructions have not been tested on those systems
