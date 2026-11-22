@@ -141,9 +141,28 @@ opencode is installed with npm, which comes with Node.js. The scripts in this tu
 Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 ```
 
-Check the result on any platform with `node --version`.
-
 **Windows with WSL instead:** if you already use WSL, open the Ubuntu app and follow the Ubuntu steps throughout. The agent then lives inside Linux and works on files in your Linux home folder; its configuration is separate from a native Windows install.
+
+### 3.4 Check your setup before continuing
+
+Open a **new** terminal window (a window opened before you installed Node.js doesn't know about it yet) and run:
+
+```bash
+node --version
+npm --version
+```
+
+Both must print a version number, for example `v22.11.0` and `10.9.0`, and `node` must be version 18 or newer. After you install opencode (Section 4.1) or Claude Code (Section 5.1), check those the same way with `opencode --version` or `claude --version`.
+
+| What you see | What to do |
+| --- | --- |
+| `node : The term 'node' is not recognized` (Windows) or `command not found: node` (macOS, Ubuntu) | Node.js is not installed, or the window was opened before you installed it. Close the terminal, open a new one and try again. If it still fails, install Node.js as described above |
+| `npm.ps1 cannot be loaded because running scripts is disabled` (Windows) | Run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once, then try again |
+| `node` works but `opencode` or `claude` is not recognised | The install in Section 4.1 or 5.1 didn't finish. Run it again and read its last lines for errors, then open a new terminal |
+| A Node.js version below 18 | Install a newer LTS version as described above |
+
+Don't continue with the configuration steps until these checks pass.
+
 
 ## 4. Setting up opencode
 
@@ -155,6 +174,8 @@ This tutorial uses the npm package `opencode-ai` (opencode version 1; 1.19.6 at 
 npm install -g opencode-ai
 opencode --version
 ```
+
+`opencode --version` must print a version number before you continue. If it doesn't, open a new terminal and try again, and see the table in Section 3.4.
 
 **A note on opencode 2.** opencode.ai now also offers version 2, installed with `curl -fsSL https://opencode.ai/v2/install | bash`, plus desktop downloads. Its [migration page](https://opencode.ai/docs/migrate-v1/) says version 2 still reads the version 1 config format used here, so the configuration below works for both. Don't install both side by side: remove the npm version first (`npm uninstall -g opencode-ai`) if you switch. The commands in this tutorial (`opencode models`, `--standalone`) are those of version 1.
 
@@ -213,7 +234,7 @@ You should see `OK`. If you see an error such as `Expecting ',' delimiter: line 
 node -e "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')); console.log('OK')" ~/.config/opencode/opencode.json
 ```
 
-**Windows.** This takes two pastes, because PowerShell would otherwise read the lines after the key prompt as your key.
+**Windows.** First make sure the checks in Section 3.4 pass. This step takes two pastes, because PowerShell would otherwise read the lines after the key prompt as your key.
 
 First, paste this line **exactly as shown** and press Enter. Don't put your key into the line itself. PowerShell then shows the prompt `Paste your Nebula API key, then press Enter:`; paste your key there and press Enter. The key appears as asterisks.
 
@@ -221,7 +242,7 @@ First, paste this line **exactly as shown** and press Enter. Don't put your key 
 $secure = Read-Host "Paste your Nebula API key, then press Enter" -AsSecureString
 ```
 
-Then paste the following block. If Windows Terminal warns that the text contains several lines, choose **Paste anyway**. If the key is missing or doesn't start with `sk-`, the block stops with a red message and changes nothing.
+Then paste the following block. If Windows Terminal warns that the text contains several lines, choose **Paste anyway**. If the key is missing or doesn't start with `sk-` (for example because you pasted this block a second time without the first line), the block stops with a red message and changes nothing.
 
 ```powershell
 & {
@@ -249,12 +270,13 @@ Then paste the following block. If Windows Terminal warns that the text contains
   }
   $file = Join-Path $dir "opencode.json"
   [System.IO.File]::WriteAllText($file, ($config | ConvertTo-Json -Depth 10))
-  node -e "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')); console.log('OK')" $file
+  try { Get-Content $file -Raw | ConvertFrom-Json | Out-Null; Write-Host "OK: config written to $file" -ForegroundColor Green }
+  catch { Write-Host "The file $file is not valid JSON. Run both steps again." -ForegroundColor Red }
 }
 Remove-Variable secure -ErrorAction SilentlyContinue
 ```
 
-You should see `OK`. The script writes UTF-8 without a byte-order mark, which opencode expects. Files in your user folder are readable only by you and administrators, so there is no `chmod` step.
+You should see a green `OK: config written to ...`. The script writes UTF-8 without a byte-order mark, which opencode expects. Files in your user folder are readable only by you and administrators, so there is no `chmod` step.
 
 #### Where to keep the key
 
@@ -439,7 +461,7 @@ node -e "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')); console
 )
 ```
 
-**Windows.** This takes two pastes, because PowerShell would otherwise read the lines after the key prompt as your key.
+**Windows.** First make sure the checks in Section 3.4 pass. This step takes two pastes, because PowerShell would otherwise read the lines after the key prompt as your key.
 
 First, paste this line **exactly as shown** and press Enter. Don't put your key into the line itself. PowerShell then shows the prompt `Paste your Nebula API key, then press Enter:`; paste your key there and press Enter. The key appears as asterisks.
 
@@ -447,7 +469,7 @@ First, paste this line **exactly as shown** and press Enter. Don't put your key 
 $secure = Read-Host "Paste your Nebula API key, then press Enter" -AsSecureString
 ```
 
-Then paste the following block. If Windows Terminal warns that the text contains several lines, choose **Paste anyway**. If the key is missing or doesn't start with `sk-`, the block stops with a red message and changes nothing.
+Then paste the following block. If Windows Terminal warns that the text contains several lines, choose **Paste anyway**. If the key is missing or doesn't start with `sk-` (for example because you pasted this block a second time without the first line), the block stops with a red message and changes nothing.
 
 ```powershell
 & {
@@ -472,7 +494,8 @@ Then paste the following block. If Windows Terminal warns that the text contains
     }
   }
   [System.IO.File]::WriteAllText($file, ($settings | ConvertTo-Json -Depth 5))
-  Get-Content $file -Raw | ConvertFrom-Json | Out-Null; "OK"
+  try { Get-Content $file -Raw | ConvertFrom-Json | Out-Null; Write-Host "OK: settings written to $file" -ForegroundColor Green }
+  catch { Write-Host "The file $file is not valid JSON. Run both steps again." -ForegroundColor Red }
 }
 Remove-Variable secure -ErrorAction SilentlyContinue
 ```
