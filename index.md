@@ -157,13 +157,13 @@ node --version
 npm --version
 ```
 
-Both must print a version number, for example `v22.11.0` and `10.9.0`, and `node` must be version 18 or newer. After you install opencode (Section 4.1) or Claude Code (Section 5.1), check those the same way with `opencode --version` or `claude --version`.
+Both must print a version number, for example `v26.13.1` and `11.20.0`, and `node` must be version 18 or newer. After you install opencode (Section 4.1) or Claude Code (Section 5.1), check those the same way with `opencode --version` or `claude --version`.
 
 | What you see | What to do |
 | --- | --- |
 | `node : The term 'node' is not recognized` (Windows) or `command not found: node` (macOS, Ubuntu) | Node.js is not installed, or the window was opened before you installed it. Close the terminal, open a new one and try again. If it still fails, install Node.js as described above |
-| `npm.ps1 cannot be loaded because running scripts is disabled` (Windows) | Run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once, then try again |
-| `node` works but `opencode` or `claude` is not recognised | The install in Section 4.1 or 5.1 didn't finish. Run it again and read its last lines for errors, then open a new terminal |
+| `npm.ps1 cannot be loaded because running scripts is disabled` or the same message for `opencode.ps1` (Windows) | Run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once, then try again |
+| `node` works but `opencode` or `claude` is not recognised | The install in Section 4.1 or 5.1 didn't finish, or (Windows) npm's program folder is not on your PATH. Run the install again and read its last lines for errors, then open a new terminal. On Windows, see the `opencode` rows in Section 7.1 |
 | A Node.js version below 18 | Install a newer LTS version as described above |
 
 Don't continue with the configuration steps until these checks pass.
@@ -176,13 +176,15 @@ Don't continue with the configuration steps until these checks pass.
 This tutorial uses the npm package `opencode-ai` (opencode version 1; 1.19.6 at the time of writing). The command is the same on all three platforms:
 
 ```bash
-npm install -g opencode-ai
+npm install -g --allow-scripts=opencode-ai opencode-ai
 opencode --version
 ```
 
+`--allow-scripts=opencode-ai` lets the package run its setup step, which puts the real opencode program in place. Newer npm versions skip that step unless you allow it, and `opencode` then doesn't start (on Ubuntu and macOS it prints `Error: opencode-ai's postinstall script was not run`). Older npm versions ignore the option.
+
 `opencode --version` must print a version number before you continue. If it doesn't, open a new terminal and try again, and see the table in Section 3.4.
 
-**A note on opencode 2.** opencode.ai now also offers version 2, installed with `curl -fsSL https://opencode.ai/v2/install | bash`, plus desktop downloads. Its [migration page](https://opencode.ai/docs/migrate-v1/) says version 2 still reads the version 1 config format used here, so the configuration below works for both. Don't install both side by side: remove the npm version first (`npm uninstall -g opencode-ai`) if you switch. The commands in this tutorial (`opencode models`, `--standalone`) are those of version 1.
+**A note on opencode 2.** opencode.ai now also offers version 2, installed with `curl -fsSL https://opencode.ai/v2/install | bash`, plus desktop downloads. Its [migration page](https://opencode.ai/docs/migrate-v1/) says version 2 still reads the version 1 config format used here, so the configuration below works for both. Don't install both side by side: remove the npm version first (`npm uninstall -g opencode-ai`) if you switch. The commands in this tutorial, such as `opencode models nebula`, are those of version 1.
 
 ### 4.2 Configure
 
@@ -298,7 +300,7 @@ There are three options. The first is recommended.
 
 ### 4.3 Add Nebula's models
 
-opencode only shows the Nebula models listed in your config. These scripts ask Nebula for every model you can use and write them all in. They keep names you already gave, read the key from your config (or from `NEBULA_API_KEY` if you used option 2), and never print the key. Run one again whenever Nebula adds models. Section 6.1 explains which model to choose.
+opencode only shows the Nebula models listed in your config. These scripts ask Nebula for every model you can use and write them all in. They keep names you already gave, read the key from your config (or from `NEBULA_API_KEY` or the key file if you used option 2 or 3), and never print the key. Run one again whenever Nebula adds models. Section 6.1 explains which model to choose.
 
 **Ubuntu and macOS:**
 
@@ -312,6 +314,10 @@ nebula = cfg["provider"]["nebula"]
 key = nebula["options"]["apiKey"]
 if key.startswith("{env:"):
     key = os.environ.get(key[5:-1], "")
+elif key.startswith("{file:"):
+    keyfile = os.path.join(os.path.dirname(path), os.path.expanduser(key[6:-1]))
+    with open(keyfile) as f:
+        key = f.read().strip()
 url = nebula["options"]["baseURL"].rstrip("/") + "/models"
 req = urllib.request.Request(url, headers={"Authorization": "Bearer " + key})
 data = json.load(urllib.request.urlopen(req, timeout=30))["data"]
@@ -346,14 +352,13 @@ The `output` value is a cautious guess; Nebula doesn't publish per-model limits.
 Check that opencode sees Nebula:
 
 ```bash
-opencode models --standalone | grep -i nebula             # Ubuntu and macOS
-opencode models --standalone | Select-String nebula       # Windows
+opencode models nebula
 ```
 
-You should see lines such as `nebula/SURF.Qwen3.8-27B-FP8`. Then start opencode inside the folder you want to work on:
+You should see lines such as `nebula/SURF.Qwen3.8-27B-FP8`. Then start opencode inside the folder you want to work on (on Windows, `cd $HOME\projects\my-analysis`):
 
 ```bash
-cd ~/projects/my-analysis      # Windows: cd $HOME\projects\my-analysis
+cd ~/projects/my-analysis
 opencode
 ```
 
@@ -411,14 +416,14 @@ curl -fsSL https://claude.ai/install.sh | bash
 claude --version
 ```
 
-Windows (PowerShell). Install [Git for Windows](https://git-scm.com/downloads/win) first: Claude Code uses its Git Bash to run commands where it can, and some features need it.
+Windows (PowerShell). Installing [Git for Windows](https://git-scm.com/downloads/win) first is recommended but optional: it provides Git Bash, which Claude Code's Bash tool needs. Without it, Claude Code runs commands in PowerShell.
 
 ```powershell
 irm https://claude.ai/install.ps1 | iex
 claude --version
 ```
 
-Alternatives on any platform: `npm install -g @anthropic-ai/claude-code` if you already have Node.js, `brew install --cask claude-code` on macOS, or `winget install Anthropic.ClaudeCode` on Windows. If `claude` is not found afterwards, open a new terminal; `claude doctor` reports installation problems.
+Alternatives on any platform: `npm install -g --allow-scripts=@anthropic-ai/claude-code @anthropic-ai/claude-code` if you already have Node.js 22 or newer, `brew install --cask claude-code` on macOS, or `winget install Anthropic.ClaudeCode` on Windows. If `claude` is not found afterwards, open a new terminal; `claude doctor` reports installation problems.
 
 ### 5.2 Configure
 
@@ -584,10 +589,10 @@ Finally start `claude` interactively and type `/status`. It should list `https:/
 
 ### 5.4 Use
 
-Start Claude Code inside the folder you want to work on:
+Start Claude Code inside the folder you want to work on (on Windows, `cd $HOME\projects\my-analysis`):
 
 ```bash
-cd ~/projects/my-analysis      # Windows: cd $HOME\projects\my-analysis
+cd ~/projects/my-analysis
 claude
 ```
 
@@ -641,30 +646,52 @@ Avoid small models (a few billion parameters) and anything marked TEST for codin
 | URLs end up as `.../api/v1/v1/...` or `.../api/v1/models` and fail | `/v1` was added to the base address | Use `https://nebula.cs.vu.nl/api` exactly, for both agents |
 | Agent loops, stops halfway or ignores tools | The model is too small for agent work | Switch to `SURF.Qwen3.8-27B-FP8` or `FAST.gpt-oss:120b` |
 | Very slow replies | Nebula is busy or loading the model | Wait a minute and try again; `FAST.*` models share VU's GPUs with other users |
-| `node` works right after installing, but is "not recognized" in every new terminal (Windows) | Node was installed with fnm, the version manager in the nodejs.org command-line instructions, which only sets up the current window | Install the Windows Installer (.msi) from nodejs.org or run `winget install OpenJS.NodeJS.LTS`, then open a new terminal. To keep fnm instead, run `Add-Content $PROFILE 'fnm env --use-on-cd --shell powershell \| Out-String \| Invoke-Expression'` once (create the profile first with `New-Item -Force $PROFILE` if it doesn't exist) |
-| `npm.ps1 cannot be loaded` (Windows) | PowerShell blocks scripts by default | Run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once |
+| `node` works right after installing, but is "not recognized" in every new terminal (Windows) | Node was installed with fnm, the version manager in the nodejs.org command-line instructions, which only sets up the current window | Install the Windows Installer (.msi) from nodejs.org or run `winget install OpenJS.NodeJS.LTS`, then open a new terminal. To keep fnm instead, add it to your PowerShell profile with the second command below this table |
+| `npm.ps1 cannot be loaded` or `opencode.ps1 cannot be loaded` (Windows) | PowerShell blocks scripts by default, including the small `opencode.ps1` launcher that npm installs | Run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once, then open a new terminal |
 | `opencode` or `claude` not recognised (Windows) or `command not found` (macOS, Ubuntu) | The terminal was opened before the installation | Open a new terminal window. If it persists, reinstall as in Sections 3.3, 4.1 or 5.1 |
+| `opencode` not recognised on Windows, even in a new terminal, although `npm install -g` finished | npm puts its programs in `C:\Users\<you>\AppData\Roaming\npm` (`%APPDATA%\npm`), and that folder is not on your PATH. The Node.js installer normally adds it | Check with `npm prefix -g` and `Test-Path "$(npm prefix -g)\opencode.cmd"`. If that prints `True`, add the folder to your PATH once with the command below this table, then open a new terminal |
+| `Error: opencode-ai's postinstall script was not run`, or `opencode` doesn't start right after installing | npm skipped the package's setup step | Reinstall with `npm install -g --allow-scripts=opencode-ai opencode-ai` (Section 4.1) |
 | Garbled screen or keys not working (Windows) | The old console window doesn't support the agent's interface | Use PowerShell inside Windows Terminal |
 | Your key was exposed | Someone else could use Nebula as you | Delete the key in Nebula (Settings → Account → API Keys), create a new one, and rerun the setup script |
+
+**Windows commands for the table above.** To add npm's program folder to your PATH (the `opencode` row), paste this into PowerShell, then open a new terminal:
+
+```powershell
+& {
+  $bin = "$(npm prefix -g)".Trim()
+  $path = [Environment]::GetEnvironmentVariable("Path", "User")
+  if (($path -split ";") -contains $bin) { Write-Host "$bin is already on your PATH. Open a new terminal." -ForegroundColor Green; return }
+  $new = if ($path) { $path.TrimEnd(";") + ";" + $bin } else { $bin }
+  [Environment]::SetEnvironmentVariable("Path", $new, "User")
+  Write-Host "Added $bin to your PATH. Open a new terminal." -ForegroundColor Green
+}
+```
+
+To keep using fnm (the `node` row), add it to your PowerShell profile once, then open a new terminal. The profile is a script, so this also needs the `Set-ExecutionPolicy` command from Section 3.3:
+
+```powershell
+if (-not (Test-Path $PROFILE)) { New-Item -Force $PROFILE | Out-Null }
+Add-Content $PROFILE 'fnm env --use-on-cd --shell powershell | Out-String | Invoke-Expression'
+```
 
 ### 7.2 opencode
 
 | What you see | What it means | Fix |
 | --- | --- | --- |
-| No Nebula models in `/models` or in `opencode models --standalone` | The config file is invalid and opencode ignored it, or it's in the wrong place | Run the check at the end of the Section 4.2 script. On error, rerun the script. For the Flatpak, check the path in Section 4.5 |
+| No Nebula models in `/models` or in `opencode models nebula` | The config file is invalid and opencode ignored it, or it's in the wrong place | Run the check at the end of the Section 4.2 script. On error, rerun the script. For the Flatpak, check the path in Section 4.5 |
 | `Expecting ':' delimiter`, `Expecting ',' delimiter` or `Unexpected token` | A hand edit broke the JSON | Rerun the Section 4.2 script, then the Section 4.3 script |
-| `Managed service port ... already in use` | The desktop app and the terminal version are both running | Close one of them, or run `opencode --standalone`. If no window is open, end the leftover process. Ubuntu and macOS: `ps aux \| grep -i opencode`, then `kill <PID>`. Windows: `Get-Process *opencode* \| Stop-Process` |
+| `Managed service port ... already in use` | The desktop app and the terminal version are both running | Close one of them. If no window is open, end the leftover process. Ubuntu and macOS: `pkill -f opencode`. Windows: `Stop-Process -Name opencode` |
 
 ### 7.3 Claude Code
 
 | What you see | What it means | Fix |
 | --- | --- | --- |
 | Claude Code asks you to log in to Anthropic | It didn't read your settings | Check that `~/.claude/settings.json` exists and passes the check in Section 5.2, then restart `claude`. Don't log in for sensitive work |
-| `/status` shows an Anthropic address instead of Nebula | Same cause, or an older login takes priority | Fix the settings file; run `/logout` inside Claude Code if you were logged in to Anthropic before |
+| `/status` shows an Anthropic address or an Anthropic login instead of Nebula | Same cause: without `ANTHROPIC_AUTH_TOKEN`, Claude Code falls back to an earlier Anthropic login | Fix the settings file and restart `claude`. To remove the old login as well, run `/logout` inside Claude Code |
 | 404 on `/api/v1/messages` | This Nebula version has no Anthropic endpoint | Use opencode instead |
 | Errors about tools, `tool_use` or the stream stopping mid-answer | Nebula's Anthropic endpoint doesn't fully handle Claude Code's requests, or the model handles tools poorly | Try `SURF.Qwen3.8-27B-FP8`; if it persists, use opencode and report it to the Nebula administrators |
 | `doesn't recognize the model ... assumes a context window` | `CLAUDE_CODE_MAX_CONTEXT_TOKENS` is not set | Add it as in Section 5.2 |
-| `Git Bash was not found` (Windows) | Git for Windows is missing | Install [Git for Windows](https://git-scm.com/downloads/win) and open a new terminal |
+| Claude Code runs only PowerShell commands, or says Git Bash wasn't found (Windows) | Git for Windows is missing | Install [Git for Windows](https://git-scm.com/downloads/win) and open a new terminal |
 
 Still stuck? Ask the Nebula administrators at the Network Institute. Send them the error message, never your key.
 

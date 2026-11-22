@@ -2,16 +2,22 @@
 // Works on Ubuntu, macOS and Windows with Node.js 18 or newer:
 //   node add-nebula-models.mjs
 // It reads the key from your config (or from NEBULA_API_KEY if the config
-// uses {env:NEBULA_API_KEY}), keeps names you already gave, and never prints the key.
+// uses {env:NEBULA_API_KEY}, or from the key file if it uses {file:...}),
+// keeps names you already gave, and never prints the key.
 import { readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 
 const path = process.argv[2] || join(homedir(), ".config", "opencode", "opencode.json");
 const cfg = JSON.parse(readFileSync(path, "utf8"));
 const nebula = cfg.provider.nebula;
 let key = nebula.options.apiKey;
 if (key.startsWith("{env:")) key = process.env[key.slice(5, -1)] || "";
+else if (key.startsWith("{file:")) {
+  let file = key.slice(6, -1);
+  if (file.startsWith("~/") || file.startsWith("~\\")) file = join(homedir(), file.slice(2));
+  key = readFileSync(resolve(dirname(path), file), "utf8").trim();
+}
 const url = nebula.options.baseURL.replace(/\/+$/, "") + "/models";
 const res = await fetch(url, { headers: { Authorization: "Bearer " + key } });
 if (!res.ok) {
