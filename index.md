@@ -251,8 +251,8 @@ Then paste the following block. If Windows Terminal warns that the text contains
 
 ```powershell
 & {
-  $key = if ($secure) { [System.Net.NetworkCredential]::new("", $secure).Password } else { "" }
-  if (-not $key.StartsWith("sk-")) { Write-Host "No valid Nebula key (it must start with sk-). Nothing was changed. Run the first line again, paste your key at the prompt, then paste this block again." -ForegroundColor Red; return }
+  $key = if ($secure) { [Runtime.InteropServices.Marshal]::PtrToStringBSTR([Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)).Trim() } else { "" }
+  if (-not $key.StartsWith("sk-")) { Write-Host "No valid Nebula key: read $($key.Length) characters, but a key must start with sk-. Nothing was changed. Run the first line again, paste your key at the prompt, then paste this block again." -ForegroundColor Red; return }
   $dir = Join-Path $HOME ".config\opencode"
   New-Item -ItemType Directory -Force -Path $dir | Out-Null
   $config = [ordered]@{
@@ -478,8 +478,8 @@ Then paste the following block. If Windows Terminal warns that the text contains
 
 ```powershell
 & {
-  $key = if ($secure) { [System.Net.NetworkCredential]::new("", $secure).Password } else { "" }
-  if (-not $key.StartsWith("sk-")) { Write-Host "No valid Nebula key (it must start with sk-). Nothing was changed. Run the first line again, paste your key at the prompt, then paste this block again." -ForegroundColor Red; return }
+  $key = if ($secure) { [Runtime.InteropServices.Marshal]::PtrToStringBSTR([Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)).Trim() } else { "" }
+  if (-not $key.StartsWith("sk-")) { Write-Host "No valid Nebula key: read $($key.Length) characters, but a key must start with sk-. Nothing was changed. Run the first line again, paste your key at the prompt, then paste this block again." -ForegroundColor Red; return }
   $dir = Join-Path $HOME ".claude"
   New-Item -ItemType Directory -Force -Path $dir | Out-Null
   $file = Join-Path $dir "settings.json"
@@ -529,7 +529,7 @@ Windows (PowerShell):
 First paste this line **exactly as shown** and press Enter, then paste your key at the `Nebula key:` prompt (it appears as asterisks):
 
 ```powershell
-$env:ANTHROPIC_AUTH_TOKEN = [System.Net.NetworkCredential]::new("", (Read-Host "Nebula key" -AsSecureString)).Password
+$env:ANTHROPIC_AUTH_TOKEN = [Runtime.InteropServices.Marshal]::PtrToStringBSTR([Runtime.InteropServices.Marshal]::SecureStringToBSTR((Read-Host "Nebula key" -AsSecureString))).Trim()
 ```
 
 Then paste the rest:
